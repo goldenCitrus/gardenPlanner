@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:io'; // Gives you the File system
+import 'dart:convert'; // Allows you to convert lists/GeoJSON to text
+import 'package:path_provider/path_provider.dart'; // Finds the right folder
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,7 +14,40 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _nameController = TextEditingController();
 
   List<String> _gardenPlans = [];
-
+  // 1. Find the correct folder for the device (iOS or Android)
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
+  // 2. Create the file reference
+  Future<File> get _localFile async {
+    final path = await _localPath;
+    return File('$path/plans.json');
+  }
+  // 3. Save the list
+  Future<File> savePlans() async {
+    final file = await _localFile;
+    // We convert the Dart list into a standard JSON text string
+    String jsonString = jsonEncode(_gardenPlans);
+    return file.writeAsString(jsonString);
+  }
+  // 4. Load the list when the app opens
+  Future<void> loadPlans() async {
+    try {
+      final file = await _localFile;
+      if (await file.exists()) {
+        String contents = await file.readAsString();
+        // Convert the text back into a Dart List
+        List<dynamic> jsonList = jsonDecode(contents);
+        setState(() {
+          _gardenPlans = jsonList.map((item) => item.toString()).toList();
+        });
+      }
+    } catch (e) {
+      // If there's an error (like the file is corrupted), do nothing.
+      print("Error loading plans: $e");
+    }
+  }
   void _showAddGardenDialog() {
     showDialog(
       context: context,
@@ -44,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
                           decoration: BoxDecoration(
-                            color: Colors.red, // THE RED BACKGROUND!
+                            color: Colors.red,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
@@ -70,6 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 setState(() {
                   _gardenPlans.add(planName);
                 });
+                savePlans();
                 _nameController.clear();
                 Navigator.pop(context);
               },
@@ -79,6 +116,12 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadPlans(); // Grab the files from the hard drive immediately!
   }
 
   @override

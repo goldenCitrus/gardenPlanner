@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'dart:io'; // Gives you the File system
-import 'dart:convert'; // Allows you to convert lists/GeoJSON to text
+import 'package:flutter/material.dart'; // Womp womp, default material theme
+import 'dart:io'; // Filesystem provider
+import 'dart:convert'; // Allows for conversion to and from proper filetypes
 import 'package:path_provider/path_provider.dart'; // Finds the right folder
+import 'map.dart'; // For screen swapping
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _nameController = TextEditingController();
 
-  List<String> _gardenPlans = [];
+  List<Map<String, dynamic>> _gardenPlans = [];
   // 1. Find the correct folder for the device (iOS or Android)
   Future<String> get _localPath async {
     final directory = await getApplicationDocumentsDirectory();
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Convert the text back into a Dart List
         List<dynamic> jsonList = jsonDecode(contents);
         setState(() {
-          _gardenPlans = jsonList.map((item) => item.toString()).toList();
+          _gardenPlans = jsonList.map((item) => item as Map<String, dynamic>).toList();
         });
       }
     } catch (e) {
@@ -104,7 +105,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   return;
                 }
                 setState(() {
-                  _gardenPlans.add(planName);
+                  DateTime now = DateTime.now();
+                  String formattedDate = '${now.month}/${now.day}/${now.year}, at ${now.hour}:${now.minute}';
+                  _gardenPlans.add({
+                    'name': planName,
+                    'lastEdited': formattedDate,
+                  });
                 });
                 savePlans();
                 _nameController.clear();
@@ -145,8 +151,6 @@ class _HomeScreenState extends State<HomeScreen> {
           : ListView.builder(
         itemCount: _gardenPlans.length,
         itemBuilder: (context, index) {
-          DateTime now = DateTime.now();
-          String formattedDate = '${now.month}/${now.day}/${now.year}';
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,29 +158,40 @@ class _HomeScreenState extends State<HomeScreen> {
               if (index == 0)
                 const Divider(color: Colors.grey, height: 1, thickness: 1),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _gardenPlans[index],
-                      style: const TextStyle(
-                        fontSize: 28,
-                      ),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapScreen(gardenPlan: _gardenPlans[index]),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'last edited $formattedDate',
-                      style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey
+                  );
+                },
+                child: SizedBox(
+                  width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _gardenPlans[index]['name'],
+                        style: const TextStyle(
+                          fontSize: 28,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        'Last edited on ${_gardenPlans[index]['lastEdited']}',
+                        style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 ),
               ),
-
               const Divider(color: Colors.grey, height: 1, thickness: 1),
             ],
           );

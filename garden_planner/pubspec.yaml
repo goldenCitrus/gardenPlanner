@@ -1,5 +1,5 @@
 name: garden_planner
-description: "A new Flutter project."
+description: "A simple garden planning app"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -35,6 +35,10 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   path_provider: ^2.1.5
+  flutter_map: ^8.3.0
+  latlong2: ^0.9.0
+  flutter_dotenv: ^5.2.1
+  geolocator: ^11.0.1
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +62,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - .env
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
